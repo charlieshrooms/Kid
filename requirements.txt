@@ -1,0 +1,2 @@
+# Core dependency — only needed for AI enhancement (optional)
+openai>=1.0.0
