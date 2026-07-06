@@ -1,0 +1,2 @@
+# Kid
+ about kids show
