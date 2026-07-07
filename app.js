@@ -197,12 +197,28 @@ function drawCaptions(scene, progress) {
   ctx.restore();
 }
 
-function wrapText(text, wordsPerLine) {
+function wrapText(text, maxCharactersPerLine) {
   const words = text.split(/\s+/).filter(Boolean);
   const lines = [];
+  let currentLine = "";
 
-  for (let index = 0; index < words.length; index += wordsPerLine) {
-    lines.push(words.slice(index, index + wordsPerLine).join(" "));
+  words.forEach((word) => {
+    const nextLine = currentLine ? `${currentLine} ${word}` : word;
+
+    if (nextLine.length <= maxCharactersPerLine) {
+      currentLine = nextLine;
+      return;
+    }
+
+    if (currentLine) {
+      lines.push(currentLine);
+    }
+
+    currentLine = word;
+  });
+
+  if (currentLine) {
+    lines.push(currentLine);
   }
 
   return lines.slice(0, 3);
