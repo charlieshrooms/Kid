@@ -5,7 +5,7 @@ A small browser-based text-to-video generator.
 ## What it does
 
 - accepts a text prompt
-- turns the prompt into short animated scenes
+- turns the prompt into short animated scenes with keyword-based subjects (for example, `horse` or `pig`)
 - previews the result on a 1280×720 canvas
 - exports the animation as a `.webm` video
 

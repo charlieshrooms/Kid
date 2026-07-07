@@ -35,6 +35,16 @@ const STYLE_PRESETS = {
   },
 };
 
+const SUBJECT_KEYWORDS = {
+  horse: ["horse", "pony", "stallion", "mare"],
+  pig: ["pig", "piglet", "hog", "boar"],
+  cat: ["cat", "kitten"],
+  dog: ["dog", "puppy"],
+  bird: ["bird", "eagle", "owl", "sparrow"],
+  fish: ["fish", "shark", "whale", "dolphin"],
+  rabbit: ["rabbit", "bunny", "hare"],
+};
+
 let activeVideo = null;
 let previewHandle = null;
 let previewStart = 0;
@@ -74,6 +84,16 @@ function titleCase(text) {
   return text.replace(/\w\S*/g, (word) => word.charAt(0).toUpperCase() + word.slice(1));
 }
 
+function inferSubject(text) {
+  const normalized = text.toLowerCase();
+
+  const matched = Object.entries(SUBJECT_KEYWORDS).find(([, keywords]) =>
+    keywords.some((keyword) => normalized.includes(keyword))
+  );
+
+  return matched ? matched[0] : "shape";
+}
+
 function buildScenes(prompt, style, duration) {
   const stylePreset = STYLE_PRESETS[style];
   const sourceScenes = chunkPrompt(prompt);
@@ -91,6 +111,8 @@ function buildScenes(prompt, style, duration) {
     return {
       index,
       text: titleCase(rawText),
+      rawText,
+      subject: inferSubject(rawText),
       start: index * lengthPerScene,
       end: (index + 1) * lengthPerScene,
       accent,
@@ -171,7 +193,7 @@ function drawForeground(scene, progress, stylePreset) {
   ctx.restore();
 }
 
-function drawCaptions(scene, progress) {
+function drawSceneHeader(scene) {
   ctx.textAlign = "center";
   ctx.textBaseline = "middle";
 
@@ -179,49 +201,119 @@ function drawCaptions(scene, progress) {
   ctx.font = "700 28px Inter, sans-serif";
   ctx.fillStyle = `${scene.accent}cc`;
   ctx.fillText(`SCENE ${scene.index + 1} ${scene.symbol}`, canvas.width / 2, subtitleY);
+}
 
-  const wrappedLines = wrapText(scene.text, 26);
-  const scale = 1 + Math.sin(progress * Math.PI) * 0.03;
+function drawAnimalBody(fillStyle, strokeStyle) {
+  ctx.fillStyle = fillStyle;
+  ctx.strokeStyle = strokeStyle;
+  ctx.lineWidth = 8;
+}
+
+function drawPig(progress, accent) {
+  const bob = Math.sin(progress * Math.PI * 2) * 8;
+
+  ctx.save();
+  ctx.translate(canvas.width / 2, canvas.height * 0.56 + bob);
+  drawAnimalBody(`${accent}cc`, "#fee2e2");
+
+  ctx.beginPath();
+  ctx.ellipse(0, 0, 170, 120, 0, 0, Math.PI * 2);
+  ctx.fill();
+  ctx.stroke();
+
+  ctx.beginPath();
+  ctx.ellipse(-140, -70, 44, 32, -0.5, 0, Math.PI * 2);
+  ctx.ellipse(140, -70, 44, 32, 0.5, 0, Math.PI * 2);
+  ctx.fill();
+  ctx.stroke();
+
+  ctx.fillStyle = "#fecdd3";
+  ctx.beginPath();
+  ctx.ellipse(0, 15, 60, 44, 0, 0, Math.PI * 2);
+  ctx.fill();
+
+  ctx.fillStyle = "#1f2937";
+  ctx.beginPath();
+  ctx.arc(-18, 15, 9, 0, Math.PI * 2);
+  ctx.arc(18, 15, 9, 0, Math.PI * 2);
+  ctx.fill();
+  ctx.restore();
+}
+
+function drawHorse(progress, accent) {
+  const gallop = Math.sin(progress * Math.PI * 2) * 14;
 
   ctx.save();
   ctx.translate(canvas.width / 2, canvas.height * 0.56);
-  ctx.scale(scale, scale);
-  ctx.font = "700 60px Inter, sans-serif";
-  ctx.fillStyle = "#f8fafc";
+  drawAnimalBody(`${accent}bb`, "#fef3c7");
 
-  wrappedLines.forEach((line, index) => {
-    const y = index * 72 - ((wrappedLines.length - 1) * 72) / 2;
-    ctx.fillText(line, 0, y);
+  ctx.beginPath();
+  ctx.ellipse(-10, 0, 210, 92, 0, 0, Math.PI * 2);
+  ctx.fill();
+  ctx.stroke();
+
+  ctx.beginPath();
+  ctx.moveTo(145, -35);
+  ctx.quadraticCurveTo(232, -110, 250, -18);
+  ctx.quadraticCurveTo(236, 65, 140, 52);
+  ctx.closePath();
+  ctx.fill();
+  ctx.stroke();
+
+  ctx.fillStyle = "#1f2937";
+  ctx.beginPath();
+  ctx.moveTo(80, -82);
+  ctx.quadraticCurveTo(165, -145, 258, -108);
+  ctx.quadraticCurveTo(182, -112, 126, -76);
+  ctx.closePath();
+  ctx.fill();
+
+  ctx.strokeStyle = "#fef3c7";
+  ctx.lineWidth = 20;
+  [[-100, 56], [-30, 68], [40, 68], [110, 56]].forEach(([x, y], index) => {
+    ctx.beginPath();
+    const legSwing = index % 2 === 0 ? gallop : -gallop;
+    ctx.moveTo(x, y);
+    ctx.lineTo(x + legSwing * 0.5, 180);
+    ctx.stroke();
   });
 
   ctx.restore();
 }
 
-function wrapText(text, maxCharactersPerLine) {
-  const words = text.split(/\s+/).filter(Boolean);
-  const lines = [];
-  let currentLine = "";
-
-  words.forEach((word) => {
-    const nextLine = currentLine ? `${currentLine} ${word}` : word;
-
-    if (nextLine.length <= maxCharactersPerLine) {
-      currentLine = nextLine;
-      return;
-    }
-
-    if (currentLine) {
-      lines.push(currentLine);
-    }
-
-    currentLine = word;
-  });
-
-  if (currentLine) {
-    lines.push(currentLine);
+function drawSimpleAnimal(scene, progress) {
+  if (scene.subject === "pig") {
+    drawPig(progress, scene.accent);
+    return;
   }
 
-  return lines.slice(0, 3);
+  if (scene.subject === "horse") {
+    drawHorse(progress, scene.accent);
+    return;
+  }
+
+  const pulse = 0.95 + Math.sin(progress * Math.PI * 2) * 0.04;
+  ctx.save();
+  ctx.translate(canvas.width / 2, canvas.height * 0.56);
+  ctx.scale(pulse, pulse);
+  ctx.fillStyle = `${scene.accent}cc`;
+  ctx.beginPath();
+  ctx.ellipse(0, 0, 150, 118, 0, 0, Math.PI * 2);
+  ctx.fill();
+  ctx.fillStyle = "#f8fafc";
+  ctx.font = "700 44px Inter, sans-serif";
+  ctx.textAlign = "center";
+  ctx.textBaseline = "middle";
+  ctx.fillText(scene.subject.toUpperCase(), 0, 0);
+  ctx.restore();
+}
+
+function drawSceneFooter(scene) {
+  ctx.textAlign = "center";
+  ctx.textBaseline = "middle";
+  ctx.fillStyle = "rgba(226, 232, 240, 0.75)";
+  ctx.font = "500 24px Inter, sans-serif";
+  ctx.fillText(scene.text, canvas.width / 2, canvas.height * 0.9);
 }
 
 function drawFrame(video, elapsedSeconds) {
@@ -236,7 +328,9 @@ function drawFrame(video, elapsedSeconds) {
   drawBackground(scene, progress);
   drawParticles(scene, boundedTime * 1.6, stylePreset);
   drawForeground(scene, progress, stylePreset);
-  drawCaptions(scene, progress);
+  drawSceneHeader(scene);
+  drawSimpleAnimal(scene, progress);
+  drawSceneFooter(scene);
 
   if (stylePreset.grain > 0) {
     ctx.fillStyle = `rgba(255,255,255,${stylePreset.grain * 0.05})`;
