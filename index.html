@@ -1,0 +1,79 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Kid Text to Video AI Generator</title>
+    <link rel="stylesheet" href="./styles.css" />
+  </head>
+  <body>
+    <main class="app-shell">
+      <section class="panel controls">
+        <p class="eyebrow">Kid Studio</p>
+        <h1>Text to Video AI Generator</h1>
+        <p class="intro">
+          Turn a prompt into an animated short video in your browser.
+        </p>
+
+        <form id="generator-form" class="generator-form">
+          <label for="prompt">Prompt</label>
+          <textarea
+            id="prompt"
+            name="prompt"
+            rows="8"
+            placeholder="A baby dragon learns to fly over a glowing forest at sunrise."
+            required
+          ></textarea>
+
+          <div class="settings-grid">
+            <label>
+              <span>Video style</span>
+              <select id="style" name="style">
+                <option value="cinematic">Cinematic</option>
+                <option value="playful">Playful</option>
+                <option value="dreamy">Dreamy</option>
+                <option value="retro">Retro</option>
+              </select>
+            </label>
+
+            <label>
+              <span>Duration</span>
+              <select id="duration" name="duration">
+                <option value="9">9 seconds</option>
+                <option value="12" selected>12 seconds</option>
+                <option value="15">15 seconds</option>
+                <option value="18">18 seconds</option>
+              </select>
+            </label>
+          </div>
+
+          <div class="actions">
+            <button type="submit" id="generate-button">Generate Preview</button>
+            <button type="button" id="download-button" class="secondary" disabled>
+              Download Video
+            </button>
+          </div>
+        </form>
+
+        <div id="status" class="status" aria-live="polite">
+          Enter a prompt to generate a preview.
+        </div>
+
+        <section class="details">
+          <h2>Generated scenes</h2>
+          <ol id="scene-list"></ol>
+        </section>
+      </section>
+
+      <section class="panel preview">
+        <div class="preview-header">
+          <h2>Preview</h2>
+          <p>1280 × 720 canvas render</p>
+        </div>
+        <canvas id="video-canvas" width="1280" height="720"></canvas>
+      </section>
+    </main>
+
+    <script src="./app.js" defer></script>
+  </body>
+</html>
